@@ -16,6 +16,8 @@ public class ProcessConnectionThread implements Runnable {
         mConnection = connection;
     }
 
+    private static final int FILES_FOR_TEST_COUNT = 3;
+
     @Override
     public void run() {
         try {
@@ -23,18 +25,46 @@ public class ProcessConnectionThread implements Runnable {
             OutputStream outputStream = mConnection.openOutputStream();
 
             System.out.println("Open output stream");
+            Thread.sleep(3000);
 
+            File startActionsTest = new File("./src/com/lenatopoleva/bluetoothserver/picturesother/01.jpg");
+            byte[] message = createFileMessageToSend(startActionsTest, "image");
+            outputStream.write(message);
+            Thread.sleep(3000);
+
+            sendAllFilesFrom("./src/com/lenatopoleva/bluetoothserver/picturesaction", "image", outputStream);
+            Thread.sleep(3000);
+
+            File endOfTest = new File("./src/com/lenatopoleva/bluetoothserver/picturesother/03.jpg");
+            message = createFileMessageToSend(endOfTest, "image");
+            outputStream.write(message);
+            Thread.sleep(3000);
+
+            File startObjectTest = new File("./src/com/lenatopoleva/bluetoothserver/picturesother/02.jpg");
+            message = createFileMessageToSend(startObjectTest, "image");
+            outputStream.write(message);
+            Thread.sleep(3000);
+
+            sendAllFilesFrom("./src/com/lenatopoleva/bluetoothserver/picturesobject", "image", outputStream);
+            Thread.sleep(3000);
+
+            message = createFileMessageToSend(endOfTest, "image");
+            outputStream.write(message);
+            Thread.sleep(3000);
+
+            File startSoundsTest = new File("./src/com/lenatopoleva/bluetoothserver/picturesother/00.jpg");
+            message = createFileMessageToSend(startSoundsTest, "image");
+            outputStream.write(message);
+
+            sendAllFilesFrom("./src/com/lenatopoleva/bluetoothserver/sounds", "audio", outputStream);
             Thread.sleep(5000);
 
-            File first =  new File("C:/Users/lenak/AndroidStudioProjects/BluetoothReciever/BluetoothServer/src/com/lenatopoleva/bluetoothserver/5.jpg");
-            File second =  new File("C:/Users/lenak/AndroidStudioProjects/BluetoothReciever/BluetoothServer/src/com/lenatopoleva/bluetoothserver/26.jpg");
-
-            byte[] message = createMessageToSend(first);
+            message = createFileMessageToSend(endOfTest, "image");
             outputStream.write(message);
-
             Thread.sleep(3000);
-            message = createMessageToSend(second);
-            outputStream.write(message);
+
+//            message = createCommandMessage("stop");
+//            outputStream.write(message);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -59,15 +89,44 @@ public class ProcessConnectionThread implements Runnable {
         return encodedfile;
     }
 
-    private static byte[] createMessageToSend (File file) {
+    private static byte[] createFileMessageToSend (File file, String fileType) {
         String encodedString = encodeFileToBase64Binary(file);
         System.out.println(encodedString);
 
         JSONObject jsonString = new JSONObject()
-                .put("type", "image")
+                .put("type", fileType)
                 .put("data", encodedString);
 
         return jsonString.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static byte[] createCommandMessage (String command) {
+
+        JSONObject jsonString = new JSONObject()
+                .put("type", command)
+                .put("data", "");
+
+        return jsonString.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static void sendAllFilesFrom(String path, String fileType, OutputStream outputStream) throws IOException, InterruptedException {
+        File[] fileArray = new File(path).listFiles();
+        if (fileArray != null) {
+            for (int i = 0; i < FILES_FOR_TEST_COUNT; i++) {
+                File file = fileArray[i];
+                if (fileType.equals("image") && file.getName().endsWith(".jpg")) {
+                    byte[] message = createFileMessageToSend(file, fileType);
+                    outputStream.write(message);
+                }
+                if (fileType.equals("audio")) {
+                    byte[] message = createFileMessageToSend(file, fileType);
+                    outputStream.write(message);
+                    Thread.sleep(1000);
+                    System.out.println("Send " + file.getName() + " sound.");
+                }
+
+            }
+        }
     }
 
 }
