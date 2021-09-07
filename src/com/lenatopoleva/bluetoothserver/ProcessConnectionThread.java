@@ -27,34 +27,29 @@ public class ProcessConnectionThread implements Runnable {
             System.out.println("Open output stream");
             Thread.sleep(3000);
 
-            message = createMessageToSend("show_image", "other", "01.jpg");
+            message = createMessageToSend("show_image", "other", "01.jpg", false);
             objectOutputStream.writeObject(message);
             Thread.sleep(1000);
-
-            message = createMessageToSend("tone_enable","","");
-            objectOutputStream.writeObject(message);
 
             sendAllFilesFrom("./src/com/lenatopoleva/bluetoothserver/picturesaction", "show_image",
                     "action", objectOutputStream);
 
-            message = createMessageToSend("show_image", "other", "03.jpg");
+            message = createMessageToSend("show_image", "other", "03.jpg", false);
             objectOutputStream.writeObject(message);
             Thread.sleep(1000);
 
-            message = createMessageToSend("tone_disable","","");
-            objectOutputStream.writeObject(message);
-
-            message = createMessageToSend("show_image", "other", "02.jpg");
+            message = createMessageToSend("show_image", "other", "02.jpg", false);
             objectOutputStream.writeObject(message);
 
             sendAllFilesFrom("./src/com/lenatopoleva/bluetoothserver/picturesobject", "show_image",
                     "object", objectOutputStream);
 
-            message = createMessageToSend("show_image", "other", "03.jpg");
+            message = createMessageToSend("show_image", "other", "03.jpg", false);
             objectOutputStream.writeObject(message);
             Thread.sleep(1000);
 
-            message = createMessageToSend("stop_session", "", "");
+            // shows 'end of session' message
+            message = createMessageToSend("stop_session", "", "", false);
             objectOutputStream.writeObject(message);
 
         } catch (Exception e) {
@@ -62,12 +57,13 @@ public class ProcessConnectionThread implements Runnable {
         }
     }
 
-    private static String createMessageToSend (String messageType, String fileSubtype, String fileName) {
+    private static String createMessageToSend (String messageType, String fileSubtype, String fileName, Boolean playTone) {
 
         JSONObject jsonString = new JSONObject()
                 .put("type", messageType)
                 .put("subtype", fileSubtype)
-                .put("fileName", fileName);
+                .put("fileName", fileName)
+                .put("tone", playTone);
 
         return jsonString.toString();
     }
@@ -81,18 +77,21 @@ public class ProcessConnectionThread implements Runnable {
                 File file = fileArray[i];
                 if (messageType.equals("show_image") && file.getName().endsWith(".jpg")) {
                     System.out.println("file name = " + file.getName());
-                    String message = createMessageToSend(messageType, fileSubtype, file.getName());
+                    String message = createMessageToSend(messageType, fileSubtype, file.getName(), true);
                     objectOutputStream.writeObject(message);
                     Thread.sleep(1000);
-
                 }
+
+                /* 'play_audio' command for the future ability to send audio
+                 example: {"type":"play_audio","subtype":"","fileName":"01.wav","tone":false}
+                 play audio files from 'sounds' package
+                 even if playTone true, it is ignored */
                 if (messageType.equals("play_audio")) {
-                    String message = createMessageToSend(messageType, fileSubtype, file.getName());
+                    String message = createMessageToSend(messageType, fileSubtype, file.getName(), false);
                     objectOutputStream.writeObject(message);
                     Thread.sleep(1000);
                     System.out.println("Send " + file.getName() + " sound.");
                 }
-
             }
         }
     }
